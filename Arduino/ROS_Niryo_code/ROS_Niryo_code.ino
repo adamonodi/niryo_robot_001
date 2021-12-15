@@ -116,15 +116,52 @@ void setup(){
   Serial.print(" \r\n****Init Complete:****\r\n");
 }
 
-int cnt = -100;
+int cnt = 0;
 int dir = 1;
 int jointNumber = 1;
+
+int planId = 1;
+
+//joint2 is not stabil
+//joint3 has a broken cable
+
+//joint 5 and 6 are the servos. They need a degree for 'dir'
+//joint 7 is the gripper. It also need a value between 45 and 135 for 'dir'
+int plan1_joint = 1;
+int plan1_dir = 0;
+
+int plan2_joint = 1;
+int plan2_dir = 1;
+
+int plan3_joint = 4;
+int plan3_dir = 0;
+
+int plan4_joint = 4;
+int plan4_dir = 1;
+
+int plan5_joint = 5;
+int plan5_dir = 45;
+
+int plan6_joint = 5;
+int plan6_dir = 90;
+
+int plan7_joint = 6;
+int plan7_dir = 45;
+
+int plan8_joint = 6;
+int plan8_dir = 90;
+
+int plan9_joint = 7;
+int plan9_dir = 45;
+
+int plan10_joint = 7;
+int plan10_dir = 90;
 
 void loop(){
   
   // Szervók mozgatása
-  joint5.write(joint5_angle);
-  joint6.write(joint6_angle);
+  //joint5.write(joint5_angle);
+  //joint6.write(joint6_angle);
   
   // Léptetőmotorok mozgatása
   //steppers.moveTo(positions);
@@ -132,109 +169,142 @@ void loop(){
 
   digitalWrite(13, HIGH-digitalRead(13)); // Beépített LED villog
 
-if ((dir == 0) && (cnt < -4000))
-{
-  dir = 1;
-}
-if ((dir == 1) && (cnt > 4000))
-{
-  
- /* Serial.print("jointNumber: ");
-  Serial.print(jointNumber);
-  Serial.print("\r\n");*/
-  dir = 0; 
-  if (jointNumber == 1)
+  switch (planId) {
+    case 1:
+      moveJoint(plan1_joint, cnt, plan1_dir);
+      break;
+    case 2:
+      moveJoint(plan2_joint, cnt, plan2_dir);
+      break;
+    case 3:
+      moveJoint(plan3_joint, cnt, plan3_dir);
+      break;
+    case 4:
+      moveJoint(plan4_joint, cnt, plan4_dir);
+      break;
+    case 5:
+      moveJoint(plan5_joint, cnt, plan5_dir);
+      break;
+    case 6:
+      moveJoint(plan6_joint, cnt, plan6_dir);
+      break;
+    case 7:
+      moveJoint(plan7_joint, cnt, plan7_dir);
+      break;
+    case 8:
+      moveJoint(plan8_joint, cnt, plan8_dir);
+      break;
+    case 9:
+      moveJoint(plan9_joint, cnt, plan9_dir);
+      break;
+    case 10:
+      moveJoint(plan10_joint, cnt, plan10_dir);
+      break;
+    default:
+      planId = 1;
+  }  
+
+  //switch planId
+  if ((cnt > 4000) || (cnt < -4000))
   {
-    jointNumber = 2;
-    Serial.print("Change jointNumber from 1 to 2 ");
+    planId++;
+    delay(1000);
+    cnt = 0;
+    Serial.print("New PlanID: ");
+    Serial.print(planId);
     Serial.print("\r\n");
   }
-  else if (jointNumber == 2)
-  {
-    jointNumber = 1;
-    
-    Serial.print("Change jointNumber from 2 to 1 ");
-    Serial.print("\r\n");
-  }
   
-  /*Serial.print("jointNumber: ");
-  Serial.print(jointNumber);
-  Serial.print("\r\n");*/
-}
-
-//Joint1
-if (jointNumber == 1)
-{
-  if ((dir == 0) && (cnt > -2000))
-  {
-    joint1.moveTo(cnt);
-    joint1.setMaxSpeed(stepper_speed);
-    joint1.setAcceleration(stepper_accel);
-    
-    joint1.run();
-    gripper_on();
-  }
-  if ((dir == 1) && (cnt < 2000))
-  {
-    joint1.moveTo(cnt);
-    
-    joint1.setMaxSpeed(stepper_speed);
-    joint1.setAcceleration(stepper_accel);
-    joint1.run();
-    gripper_off();
-  }
-}
-
-//Joint2
-if (jointNumber == 2)
-{
-  if ((dir == 0) && (cnt > -2000))
-  {
-    joint2.moveTo(cnt);
-    joint2.setMaxSpeed(stepper_speed);
-    joint2.setAcceleration(stepper_accel);
-    
-    joint2.run();
-    gripper_on();
-  }
-  if ((dir == 1) && (cnt < 2000))
-  {
-    joint2.moveTo(cnt);
-    
-    joint2.setMaxSpeed(stepper_speed);
-    joint2.setAcceleration(stepper_accel);
-    joint2.run();
-    gripper_off();
-  }
-}
-
-//Stop
-if ((cnt > 3000 ) || cnt < -3000)
-{
-  joint1.setAcceleration(0);
-  joint1.setMaxSpeed(0);
-  joint2.setAcceleration(0);
-  joint2.setMaxSpeed(0);
-}
-
-if (dir == 0)
-{
-  cnt--;
-}
-else
-{
-  cnt++;
-}
-  //joint1.run();
-
-  if ((cnt % 100) == 0)
+  if ((cnt % 1000) == 0)
   {
   Serial.print("cnt: ");
   Serial.print(cnt);
   Serial.print("\r\n");
   }
-  // Szervók mozgatása
-  //joint5.write(180);
-  //joint6.write(180);
-  //delay(1000);
+}
+
+int changeCnt(int direction)
+{
+      if (direction == 0)
+      {
+        return cnt--;
+      }
+      else if (direction == 1)
+      {
+        return cnt++;
+      }
+      return 0;
+}
+
+void moveJoint(int jointId, int _cnt, int _dir)
+{
+  switch (jointId)
+  {
+    case 1:
+        changeCnt(_dir);
+        joint1.moveTo(_cnt);        
+        joint1.run();
+      break;
+    case 2:
+        changeCnt(_dir);
+        joint2.moveTo(_cnt);        
+        joint2.run();
+      break;
+    case 3:
+        changeCnt(_dir);
+        joint3.moveTo(_cnt);        
+        joint3.run();
+      break;
+    case 4:
+        changeCnt(_dir);
+        joint4.moveTo(_cnt);        
+        joint4.run();
+      break;
+    //servo
+    case 5:
+      if (_dir > 180)
+      {
+        _dir = 180;
+      }
+      if (_dir < -180)
+      {
+        _dir = -180;
+      }
+      joint5.write(_dir);
+    planId++;
+    delay(1000);
+      break;
+    //servo
+    case 6:
+      if (_dir > 180)
+      {
+        _dir = 180;
+      }
+      if (_dir < -180)
+      {
+        _dir = -180;
+      }
+      joint6.write(_dir);
+    planId++;
+    delay(1000);
+      break;
+
+      break;
+    //servo, gripper
+    case 7:
+      if (_dir > 135)
+      {
+        _dir = 135;
+      }
+      if (_dir < 45)
+      {
+        _dir = 45;
+      }
+      cnt = 0;
+      gripper.write(_dir); // Megfogó szervó szöge 45-135  
+      
+    planId++;
+    delay(1000);  
+      break;
+  }
 }
