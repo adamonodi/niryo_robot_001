@@ -61,16 +61,36 @@ int gripper_angle = 90;
 int stepper_speed = 4000;
 int stepper_accel = 2000;
 
+  int step0 = 1000; //J1
+  int step1 = 1100;
+  int step2 = 2100; //J2
+  int step3 = 2200;
+  int step4 = 3200; //J3
+  int step5 = 3300;
+  int step6 = 4300; //J4
+  int step7 = 4400;
+  int step8 = 5400; //S1
+  int step9 = 5500;
+  int step10 = 6500; //S2
+  int step11 = 6600;
+  int step12 = 7600;
 
-void cmd_cb(const sensor_msgs::JointState& cmd_msg){
+String incomingString = ""; // for incoming serial data
+String lastString = ""; // for incoming serial data
+
+sensor_msgs::JointState cmd_msg;
+int dir = 0;
+int dirCnt = 0;
+
+void cmd_cb(const sensor_msgs::JointState& _cmd_msg){
 
   // Szöghelyzetek beolvasása
-  cur_angle[0] = cmd_msg.position[0];
-  cur_angle[1] = cmd_msg.position[1];
-  cur_angle[2] = cmd_msg.position[2];
-  cur_angle[3] = cmd_msg.position[3];
-  cur_angle[4] = cmd_msg.position[4];
-  cur_angle[5] = cmd_msg.position[5];
+  cur_angle[0] = _cmd_msg.position[0];
+  cur_angle[1] = _cmd_msg.position[1];
+  cur_angle[2] = _cmd_msg.position[2];
+  cur_angle[3] = _cmd_msg.position[3];
+  cur_angle[4] = _cmd_msg.position[4];
+  cur_angle[5] = _cmd_msg.position[5];
   
   // Lépések számítása
   joint_step[0] = mod[0] * ((cur_angle[0]-prev_angle[0])*stepsPerRevolution[0]/(2*M_PI));
@@ -98,6 +118,7 @@ void cmd_cb(const sensor_msgs::JointState& cmd_msg){
         // Szervók szögének átváltása radiánból fokba
         joint5_angle = (int) (90 - (cur_angle[4] * 180 / M_PI));
         joint6_angle = (int) (90 + (cur_angle[5] * 180 / M_PI));
+        
   }
   // Szöghelyzetek mentése a következő ciklushoz
   prev_angle[0] = cur_angle[0];
@@ -107,8 +128,17 @@ void cmd_cb(const sensor_msgs::JointState& cmd_msg){
 
 }
 
-void gripper_cb( const std_msgs::UInt16& cmd_msg){
-   gripper.write(cmd_msg.data); // Megfogó szervó szöge 45-135    
+void gripper_cb( const std_msgs::UInt16& _cmd_msg){
+   gripper.write(_cmd_msg.data); // Megfogó szervó szöge 45-135    
+}
+
+void gripper_on()
+{
+   gripper.write(50); // Megfogó szervó szöge 45-135    
+}
+void gripper_off()
+{
+   gripper.write(130); // Megfogó szervó szöge 45-135    
 }
 
 // ROS feliratkozás témákra, üzenetek lekérése
@@ -116,6 +146,7 @@ ros::Subscriber<sensor_msgs::JointState> sub("joint_states", cmd_cb);
 ros::Subscriber<std_msgs::UInt16> gripper_sub("gripper", gripper_cb);
 
 void setup(){
+  Serial.begin(115200); // opens serial port, sets data rate to 9600 bps
   // Csomópontok inicializálása, feliratkozás
   nh.getHardware()->setBaud(115200);
   nh.initNode();
@@ -165,6 +196,14 @@ void setup(){
   joint5.attach(5);
   joint6.attach(4); 
   gripper.attach(11);
+  
+  cmd_msg.position[0] = 0;
+  cmd_msg.position[1] = 0;
+  cmd_msg.position[2] = 0;
+  cmd_msg.position[3] = 0;
+  cmd_msg.position[4] = 0;
+  cmd_msg.position[5] = 0;
+    Serial.print(" \r\n****Init Complete:****\r\n");
 }
 
 void loop(){
@@ -187,5 +226,84 @@ void loop(){
 
   // Visszahívások (cb) ciklusonkénti futtatása
   nh.spinOnce();
+
+  // check if data is available
+  if (Serial.available() > 0) {
+    // read the incoming string:
+    incomingString = Serial.readStringUntil('\n');
+
+    // prints the received data
+    Serial.print("I received: ");
+    Serial.println(incomingString);
+    lastString = incomingString;
+  }
+    cmd_msg.position[0] = 0;
+    cmd_msg.position[1] = 0;
+    cmd_msg.position[2] = 0;
+    cmd_msg.position[3] = 0;
+    cmd_msg.position[4] = 0;
+    cmd_msg.position[5] = 0;
+  if (lastString == "a")
+  {
+    cmd_msg.position[1] = 10;
+  }
+  if (lastString == "b")
+  {
+    cmd_msg.position[1] = 0;
+  }
+
+  dirCnt++;
+  
+      cmd_msg.position[0] = 0; 
+      cmd_msg.position[1] = 0; 
+      cmd_msg.position[2] = 0; 
+      cmd_msg.position[3] = 0; 
+      cmd_msg.position[4] = 0;
+      cmd_msg.position[5] = 0;
+
+    if ((dirCnt > 0) && (dirCnt < step0))
+    {
+      cmd_msg.position[0] = dirCnt % 10;
+    }
+     if (((dirCnt > step0) && (dirCnt < step1 )) || ((dirCnt > step4) && (dirCnt < step5 )) || ((dirCnt > step8) && (dirCnt < step9 )))
+    { 
+      gripper_on();
+      cmd_msg.position[5] = 70;
+      cmd_msg.position[6] = 70;
+    }
+    
+     if (((dirCnt > step2) && (dirCnt < step3 )) || ((dirCnt > step6) && (dirCnt < step7 )) || ((dirCnt > step10) && (dirCnt < step11 )))
+    { 
+      gripper_off();
+      cmd_msg.position[5] = 70;
+      cmd_msg.position[6] = 70;
+    }
+    
+    if ((dirCnt > step1) && (dirCnt < step2))
+    {
+      cmd_msg.position[1] = dirCnt % 100;
+    }
+    
+    if ((dirCnt > step3) && (dirCnt < step4))
+    {
+      cmd_msg.position[2] = dirCnt % 100;
+    }
+    
+    if ((dirCnt > step5) && (dirCnt < step6))
+    {
+      cmd_msg.position[3] = dirCnt % 100;
+    }
+    
+    if ((dirCnt > step7) && (dirCnt < step8))
+    {
+      cmd_msg.position[4] = dirCnt % 100;
+    }
+    
+    if (dirCnt > step9)
+    {
+      dirCnt = 0;
+    }
+    
+    cmd_cb(cmd_msg);
   delay(1);
 }
