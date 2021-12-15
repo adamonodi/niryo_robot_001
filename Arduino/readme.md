@@ -30,3 +30,9 @@
     Joint5  Blue
     Joint6  Yellow
     Gripper Green
+
+# IDE settings
+Set the board to Mega2560
+
+Tools -> Board -> Arduino Mega or Mega 2560
+![](./Images/ide_BoardSettings.png "Parts of the GUI")
